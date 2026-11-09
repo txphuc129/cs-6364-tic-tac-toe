@@ -165,13 +165,13 @@ window.onload = function () {
     return empty;
   }
 
-  //6. Making the AI play - playAI() and minimax()
+  //6. Making the AI play - playAI() and miniMaxWithAlphaBeta()
 
   //playAI()
   function playAI() {
     //symbol = ['X','','O','O','','O','','X','X'], 'O'
     //nextMove = {id:4,score:10}
-    var nextMove = miniMax(symbol, ai); //object that stores id of next move and score of the box for next move
+    var nextMove = miniMaxWithAlphaBeta(symbol, ai, -Infinity, Infinity); //object that stores id of next move and score of the box for next move
     var nextId = 'canvas' + (nextMove.id + 1);
     box = document.getElementById(nextId);
     ctx = box.getContext('2d');
@@ -198,10 +198,10 @@ window.onload = function () {
     }
   }
 
-  //Minimax function
+  //miniMaxWithAlphaBeta function
   //For this example/explanation, AI - X, human - O
   //symbol = ['X','','O','X','','O','','X','X'], 'O' -> human
-  function miniMax(newSymbol, player) {
+  function miniMaxWithAlphaBeta(newSymbol, player, alpha, beta) {
     var empty = [];
     empty = emptyBoxes(newSymbol); //[]
 
@@ -232,13 +232,31 @@ window.onload = function () {
       if (player === ai) {
         //result = [{id:4,score:-10}],
         //curMove = {id:1,score:-10}
-        result = miniMax(newSymbol, human); //index and score
+        result = miniMaxWithAlphaBeta(newSymbol, human, alpha, beta); //index and score
         curMove.score = result.score; //10
+
+        // Alpha-beta pruning: if the AI already has a score better than beta, the opponent would never allow this branch to be chosen
+        if (curMove.score > alpha) {
+          alpha = curMove.score;
+        }
+        if (beta <= alpha) {
+          newSymbol[empty[i]] = '';
+          break;
+        }
       } else {
         //result = [{id:6, score:10}]
         //curMove = {id:6, score:10}
-        result = miniMax(newSymbol, ai);
+        result = miniMaxWithAlphaBeta(newSymbol, ai, alpha, beta);
         curMove.score = result.score; //-10
+
+        // Alpha-beta pruning: if the human can force a score lower than alpha, the maximizing player will never choose this branch
+        if (curMove.score < beta) {
+          beta = curMove.score;
+        }
+        if (beta <= alpha) {
+          newSymbol[empty[i]] = '';
+          break;
+        }
         //level 2 move 1 curMove = {id: 6, score: 10}
         //level 3 move 1 -> posMoves = [{id:4,score:10}]
         //level 2 move 1 -> posMoves = [{id:6, score:10}]
