@@ -241,6 +241,7 @@ window.onload = function () {
         }
         if (beta <= alpha) {
           newSymbol[empty[i]] = '';
+          posMoves.push(curMove);
           break;
         }
       } else {
@@ -255,6 +256,7 @@ window.onload = function () {
         }
         if (beta <= alpha) {
           newSymbol[empty[i]] = '';
+          posMoves.push(curMove);
           break;
         }
         //level 2 move 1 curMove = {id: 6, score: 10}
