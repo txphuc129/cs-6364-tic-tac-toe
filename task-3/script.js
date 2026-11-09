@@ -9,9 +9,11 @@ window.onload = function () {
   var symbol;
   var winner;
   var gameOver = false;
-  var human = 'X';
-  var ai = 'O';
+  var playerX = 'X';
+  var playerO = 'O';
   var result = {};
+  var wins = { X: 0, O: 0, draws: 0 };
+  var moveDelay = 150;
   filled = new Array();
   symbol = new Array();
   winner = [
@@ -29,20 +31,13 @@ window.onload = function () {
     symbol[i] = '';
   }
 
-  //newGame - event + function
-  var n = document.getElementById('new');
-  n.addEventListener('click', newGame);
-
-  //Reload page
-  function newGame() {
-    document.location.reload();
-  }
-
-  //Canvas click + retrieving the box's number
-  //canvas click event
-  document.getElementById('tic').addEventListener('click', function (e) {
-    boxClick(e.target.id);
-  });
+  var gameCountInput = document.getElementById('game-count');
+  var runButton = document.getElementById('run-games');
+  var status = document.getElementById('status');
+  var xWinsOutput = document.getElementById('x-wins');
+  var oWinsOutput = document.getElementById('o-wins');
+  var drawsOutput = document.getElementById('draws');
+  document.getElementById('game-form').addEventListener('submit', runGames);
 
   //2.Drawing X's and O's
   //Draw X
@@ -59,7 +54,7 @@ window.onload = function () {
     ctx.stroke();
     ctx.closePath();
 
-    symbol[num - 1] = human;
+    symbol[num - 1] = playerX;
   }
 
   //Drawing O
@@ -72,7 +67,7 @@ window.onload = function () {
     ctx.stroke();
     ctx.closePath();
 
-    symbol[next] = ai; // 'O'
+    symbol[next] = playerO;
   }
 
   //3.Winner check function
@@ -89,70 +84,7 @@ window.onload = function () {
     return false;
   }
 
-  //4.Box click function - human playing
-  function boxClick(numId) {
-    box = document.getElementById(numId);
-    ctx = box.getContext('2d');
-    switch (numId) {
-      case 'canvas1':
-        num = 1;
-        break;
-      case 'canvas2':
-        num = 2;
-        break;
-      case 'canvas3':
-        num = 3;
-        break;
-      case 'canvas4':
-        num = 4;
-        break;
-      case 'canvas5':
-        num = 5;
-        break;
-      case 'canvas6':
-        num = 6;
-        break;
-      case 'canvas7':
-        num = 7;
-        break;
-      case 'canvas8':
-        num = 8;
-        break;
-      case 'canvas9':
-        num = 9;
-        break;
-    }
-
-    if (filled[num - 1] === false) {
-      if (gameOver === false) {
-        if (turn % 2 !== 0) {
-          drawX();
-          turn++;
-          filled[num - 1] = true;
-
-          if (winnerCheck(symbol, symbol[num - 1]) === true) {
-            document.getElementById('result').innerText = "Player '" + symbol[num - 1] + "' won!";
-            gameOver = true;
-          }
-
-          if (turn > 9 && gameOver !== true) {
-            document.getElementById('result').innerText = 'GAME OVER! IT WAS A DRAW!';
-            return;
-          }
-
-          if (turn % 2 == 0) {
-            playAI();
-          }
-        }
-      } else {
-        alert('Game over. Please click the New Game button to start again');
-      }
-    } else {
-      alert('This box was already filled. Please click on another one.');
-    }
-  }
-
-  //5. Find the empty boxes
+  //4. Find the empty boxes
   function emptyBoxes(newSymbol) {
     var j = 0;
     var empty = [];
@@ -165,57 +97,36 @@ window.onload = function () {
     return empty;
   }
 
-  //6. Making the AI play - playAI() and miniMaxWithAlphaBeta()
-
-  //playAI()
-  function playAI() {
-    //symbol = ['X','','O','O','','O','','X','X'], 'O'
-    //nextMove = {id:4,score:10}
-    var nextMove = miniMaxWithAlphaBeta(symbol, ai, -Infinity, Infinity); //object that stores id of next move and score of the box for next move
-    var nextId = 'canvas' + (nextMove.id + 1);
-    box = document.getElementById(nextId);
-    ctx = box.getContext('2d');
-    if (gameOver === false) {
-      if (turn % 2 === 0) {
-        //if turn is even
-        drawO(nextMove.id);
-        turn++;
-        filled[nextMove.id] = true;
-
-        //winner check - ai wins
-        if (winnerCheck(symbol, symbol[nextMove.id]) === true) {
-          document.getElementById('result').innerText = "Player '" + symbol[nextMove.id] + "' won!";
-          gameOver = true;
-        }
-
-        //draw condition
-        if (turn > 9 && gameOver !== true) {
-          document.getElementById('result').innerText = 'GAME OVER! IT WAS A DRAW!';
-        }
-      }
-    } else {
-      alert('Game is over. Please click the New Game button to start again');
+  //5. Let each machine play using minimax with alpha-beta pruning
+  function playMachineMove(player) {
+    var nextMove = miniMaxWithAlphaBeta(symbol, player, -Infinity, Infinity);
+    if (!nextMove || !Number.isInteger(nextMove.id) || filled[nextMove.id]) {
+      throw new Error('The machine player did not return a valid move.');
     }
+
+    num = nextMove.id + 1;
+    box = document.getElementById('canvas' + num);
+    ctx = box.getContext('2d');
+    if (player === playerX) {
+      drawX();
+    } else {
+      drawO(nextMove.id);
+    }
+    filled[nextMove.id] = true;
+    turn++;
   }
 
-  //miniMaxWithAlphaBeta function
-  //For this example/explanation, AI - X, human - O
-  //symbol = ['X','','O','X','','O','','X','X'], 'O' -> human
+  //Minimax function with alpha-beta pruning
   function miniMaxWithAlphaBeta(newSymbol, player, alpha, beta) {
     var empty = [];
-    empty = emptyBoxes(newSymbol); //[]
+    empty = emptyBoxes(newSymbol);
 
-    if (winnerCheck(newSymbol, human)) {
-      return { score: -10 }; //human wins
-    } else if (winnerCheck(newSymbol, ai)) {
-      return { score: 10 }; //AI wins
+    if (winnerCheck(newSymbol, playerX)) {
+      return { score: 10 }; //Player X wins
+    } else if (winnerCheck(newSymbol, playerO)) {
+      return { score: -10 }; //Player O wins
     } else if (empty.length === 0) {
-      if (winnerCheck(newSymbol, human)) {
-        return { score: -10 };
-      } else if (winnerCheck(newSymbol, ai)) {
-        return { score: 10 };
-      }
-      return { score: 0 }; //game is draw
+      return { score: 0 }; //Game is a draw
     }
 
     //if its not a terminal state
@@ -227,15 +138,14 @@ window.onload = function () {
       var curMove = {};
       //generate the new board with the current move
       curMove.id = empty[i]; //4
-      newSymbol[empty[i]] = player; //AI
+      newSymbol[empty[i]] = player;
 
-      if (player === ai) {
-        //result = [{id:4,score:-10}],
-        //curMove = {id:1,score:-10}
-        result = miniMaxWithAlphaBeta(newSymbol, human, alpha, beta); //index and score
-        curMove.score = result.score; //10
+      if (player === playerX) {
+        //Player X maximizes the score
+        result = miniMaxWithAlphaBeta(newSymbol, playerO, alpha, beta);
+        curMove.score = result.score;
 
-        // Alpha-beta pruning: if the AI already has a score better than beta, the opponent would never allow this branch to be chosen
+        //Alpha-beta pruning: update X's best guaranteed score and stop at a beta cutoff.
         if (curMove.score > alpha) {
           alpha = curMove.score;
         }
@@ -245,12 +155,11 @@ window.onload = function () {
           break;
         }
       } else {
-        //result = [{id:6, score:10}]
-        //curMove = {id:6, score:10}
-        result = miniMaxWithAlphaBeta(newSymbol, ai, alpha, beta);
-        curMove.score = result.score; //-10
+        //Player O minimizes the score
+        result = miniMaxWithAlphaBeta(newSymbol, playerX, alpha, beta);
+        curMove.score = result.score;
 
-        // Alpha-beta pruning: if the human can force a score lower than alpha, the maximizing player will never choose this branch
+        //Alpha-beta pruning: update O's best guaranteed score and stop at an alpha cutoff.
         if (curMove.score < beta) {
           beta = curMove.score;
         }
@@ -259,35 +168,24 @@ window.onload = function () {
           posMoves.push(curMove);
           break;
         }
-        //level 2 move 1 curMove = {id: 6, score: 10}
-        //level 3 move 1 -> posMoves = [{id:4,score:10}]
-        //level 2 move 1 -> posMoves = [{id:6, score:10}]
       }
 
-      //level 1 move 1 -> posMoves = [{id:4,score:-10},{id:6, score:10}]
-      //level 0 -> posMoves = [{id:4,score:10},{id:6,score:10},{id:1,score:-10}]
-      //empty:[1,4,6]
       newSymbol[empty[i]] = '';
-
-      posMoves.push(curMove); //[{id: 1, score: -10}]
+      posMoves.push(curMove);
     }
 
     //Calculate score of intermediate states - best move + score with respect to that player + return statement
     var bestMove;
-    //AI - max player (always) -> choose maximum value, human - min player -> choose minimum value
-
-    if (player === ai) {
-      //posMoves = [{id:4,score:10},{id:6,score:10},{id:1,score:-10}]
+    //Player X maximizes the score; Player O minimizes the score.
+    if (player === playerX) {
       var highestScore = -1000;
       for (var j = 0; j < posMoves.length; j++) {
         if (posMoves[j].score > highestScore) {
           highestScore = posMoves[j].score;
-          bestMove = j; //0
+          bestMove = j;
         }
       }
-    }
-    //posMoves = [{id:4,score:-10},{id:6, score:10}]
-    else {
+    } else {
       var lowestScore = 1000;
       for (var j = 0; j < posMoves.length; j++) {
         if (posMoves[j].score < lowestScore) {
@@ -297,6 +195,92 @@ window.onload = function () {
       }
     }
     return posMoves[bestMove];
-    //posMoves[0] = {id:4,score:10}
+  }
+
+  function delay(milliseconds) {
+    return new Promise(function (resolve) {
+      window.setTimeout(resolve, milliseconds);
+    });
+  }
+
+  function clearBoard() {
+    for (var i = 0; i < 9; i++) {
+      ctx = document.getElementById('canvas' + (i + 1)).getContext('2d');
+      ctx.clearRect(0, 0, 100, 100);
+      document.getElementById('canvas' + (i + 1)).style.backgroundColor = 'lightyellow';
+      filled[i] = false;
+      symbol[i] = '';
+    }
+    turn = 1;
+    gameOver = false;
+  }
+
+  function updateResults() {
+    xWinsOutput.value = wins.X;
+    oWinsOutput.value = wins.O;
+    drawsOutput.value = wins.draws;
+  }
+
+  async function playGame(gameNumber, totalGames) {
+    // Clear the board before starting a new game
+    clearBoard();
+    // Until the game ends, each machine takes turns playing a move. The game ends when one machine wins or the game is a draw
+    while (gameOver === false) {
+      var player = turn % 2 !== 0 ? playerX : playerO;
+      status.textContent =
+        'Game ' + gameNumber + ' of ' + totalGames + ': Machine ' + player + ' is choosing a move.';
+      playMachineMove(player);
+      await delay(moveDelay);
+
+      if (winnerCheck(symbol, player)) {
+        wins[player]++;
+        gameOver = true;
+        status.textContent =
+          'Game ' + gameNumber + ' of ' + totalGames + ': Machine ' + player + ' won.';
+      } else if (turn > 9) {
+        wins.draws++;
+        gameOver = true;
+        status.textContent = 'Game ' + gameNumber + ' of ' + totalGames + ': draw.';
+      }
+    }
+    // Update the final results after each game
+    updateResults();
+  }
+
+  async function runGames(event) {
+    event.preventDefault();
+    var gameCount = gameCountInput.valueAsNumber;
+    if (!Number.isInteger(gameCount) || gameCount < 1 || gameCount > 10) {
+      status.textContent = 'Enter a whole number from 1 through 10.';
+      gameCountInput.focus();
+      return;
+    }
+
+    runButton.disabled = true;
+    gameCountInput.disabled = true;
+    wins = { X: 0, O: 0, draws: 0 };
+    updateResults();
+
+    try {
+      for (var gameNumber = 1; gameNumber <= gameCount; gameNumber++) {
+        await playGame(gameNumber, gameCount);
+        await delay(moveDelay);
+      }
+      status.textContent =
+        'Completed ' +
+        gameCount +
+        ' games. Machine X wins: ' +
+        wins.X +
+        ', Machine O wins: ' +
+        wins.O +
+        ', draws: ' +
+        wins.draws +
+        '.';
+    } catch (error) {
+      status.textContent = 'Unable to complete the games: ' + error.message;
+    } finally {
+      runButton.disabled = false;
+      gameCountInput.disabled = false;
+    }
   }
 };

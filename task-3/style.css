@@ -19,19 +19,10 @@ h1#head {
     color: cornflowerblue;
 }
 
-h1#result {
-    font-size: 30px;
-    font-family: Verdana;
-    color: chocolate;
-    text-align: center;
-    margin-bottom: 30px;
-}
-
 canvas {
     border: 3px solid dodgerblue; 
     background-color: lightyellow;
     text-align: center;
-	/* Added to join the canvases after we created the red strike throughts */
 	display: block;
 	float: left;
 }
@@ -87,10 +78,66 @@ button {
 	border-radius: 3px;
 }
 
+button:hover {
+    background: green;
+}
+
+#controls {
+    margin: -20px auto 30px;
+    text-align: center;
+}
+
+#game-form {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+#game-form button {
+    margin-top: 0;
+}
+
+#game-form label {
+    color: brown;
+    font-weight: bold;
+}
+
+#game-count {
+    width: 70px;
+    padding: 8px;
+    font-size: 18px;
+}
+
+#status {
+    min-height: 1.2em;
+    text-align: center;
+    font-size: 18px;
+}
+
+#rules p {
+    font-size: 26px;
+}
+
+output {
+    font-weight: bold;
+}
+
 canvas:hover {
     background-color: lightblue;
 }
 
-button:hover {
-    background: green;
+@media (max-width: 700px) {
+    #game {
+        width: 318px;
+        height: auto;
+    }
+
+    #tic,
+    #rules {
+        float: none;
+        display: block;
+        margin: 0 auto 24px;
+    }
 }
