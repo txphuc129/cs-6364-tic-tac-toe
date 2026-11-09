@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tic Tac Toe</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+
+  <body>
+    <header>
+      <h1 id="head">Tic Tac Toe Game</h1>
+    </header>
+
+    <section id="controls" aria-label="Game controls">
+      <form id="game-form">
+        <label for="game-count">Number of games (1-10):</label>
+        <input
+          id="game-count"
+          name="game-count"
+          type="number"
+          min="1"
+          max="10"
+          step="1"
+          value="1"
+          required
+        />
+        <button id="run-games" type="submit">Run games</button>
+      </form>
+      <p id="status" role="status" aria-live="polite">
+        Enter a number of games and select Run games.
+      </p>
+    </section>
+
+    <section id="game">
+      <div id="tic" aria-label="Tic-Tac-Toe board">
+        <canvas id="canvas1" width="100" height="100" aria-label="Top left"></canvas>
+        <canvas id="canvas2" width="100" height="100" aria-label="Top middle"></canvas>
+        <canvas id="canvas3" width="100" height="100" aria-label="Top right"></canvas>
+        <br />
+
+        <canvas id="canvas4" width="100" height="100" aria-label="Middle left"></canvas>
+        <canvas id="canvas5" width="100" height="100" aria-label="Center"></canvas>
+        <canvas id="canvas6" width="100" height="100" aria-label="Middle right"></canvas>
+        <br />
+
+        <canvas id="canvas7" width="100" height="100" aria-label="Bottom left"></canvas>
+        <canvas id="canvas8" width="100" height="100" aria-label="Bottom middle"></canvas>
+        <canvas id="canvas9" width="100" height="100" aria-label="Bottom right"></canvas>
+      </div>
+
+      <div id="rules" aria-label="Game results">
+        <h2>Results</h2>
+        <p>Machine X wins: <output id="x-wins">0</output></p>
+        <p>Machine O wins: <output id="o-wins">0</output></p>
+        <p>Draws: <output id="draws">0</output></p>
+      </div>
+    </section>
+
+    <script type="text/javascript" src="script.js"></script>
+  </body>
+</html>
