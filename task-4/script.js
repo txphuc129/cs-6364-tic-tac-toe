@@ -15,7 +15,7 @@ window.onload = function () {
     O: { wins: 0, losses: 0, draws: 0 },
     I: { wins: 0, losses: 0, draws: 0 },
   };
-  var moveDelay = 150;
+  var moveDelay = 120;
   var searchDepth = 4;
   filled = new Array();
   symbol = new Array();
@@ -106,8 +106,7 @@ window.onload = function () {
       if (
         symbol[winner[j][0]] == player &&
         symbol[winner[j][1]] == player &&
-        symbol[winner[j][2]] == player &&
-        symbol[winner[j][3]] == player
+        symbol[winner[j][2]] == player
       ) {
         return true;
       }
@@ -263,7 +262,7 @@ window.onload = function () {
   async function playGame(gameNumber, totalGames) {
     // Clear the board before starting a new game
     clearBoard();
-    // Until the game ends, each machine takes a turn. Four matching marks in a line wins
+    // Until the game ends, each machine takes a turn. Three matching marks in a line wins.
     while (gameOver === false) {
       var playerIndex = turn % players.length;
       var player = players[playerIndex];

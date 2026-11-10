@@ -3,28 +3,20 @@
     margin: 0;
 }
 
-html { 
-    background-color: #ffff80; 
+html {
+    background-color: #ffff80;
 }
 
-header{
+header {
     text-align: center;
     margin: 50px;
-	padding: 0; 
+    padding: 0;
 }
 
-h1#head { 
+h1#head {
     font-size: 50px;
     font-family: Cursive;
     color: cornflowerblue;
-}
-
-canvas {
-    border: 3px solid dodgerblue; 
-    background-color: lightyellow;
-    text-align: center;
-	display: block;
-	float: left;
 }
 
 #game {
@@ -35,13 +27,55 @@ canvas {
 }
 
 #tic {
+    --board-size: 3;
     position: relative;
     margin: 0 auto;
     width: 424px;
     height: 424px;
-    display: inline-block;
+    display: grid;
+    grid-template-columns: repeat(var(--board-size), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--board-size), minmax(0, 1fr));
     float: left;
-	border: 3px solid dodgerblue; 
+    border: 3px solid dodgerblue;
+}
+
+.cell {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid dodgerblue;
+    background-color: lightyellow;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    line-height: 1;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.cell:disabled {
+    opacity: 1;
+    color: white;
+}
+
+.cell.mark-player-0 {
+    background-color: #fb5181;
+    color: white;
+}
+
+.cell.mark-player-1 {
+    background-color: #93f273;
+    color: white;
+}
+
+.cell.mark-I {
+    background-color: #8cc8ff;
+    color: white;
 }
 
 #rules {
@@ -49,7 +83,7 @@ canvas {
     width: 318px;
     height: 318px;
     text-align: center;
-    display: inline-block;
+    display: block;
     float: right;
 }
 
@@ -82,7 +116,7 @@ td output {
 }
 
 button {
-    margin-top: 25px; 
+    margin-top: 25px;
     width: 200px;
     height: 50px;
     font-size: 20px;
@@ -90,9 +124,9 @@ button {
     font-family: cursive;
     background-color: limegreen;
     color: gold;
-    border: 1px solid black; 
-	box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.7);
-	border-radius: 3px;
+    border: 1px solid black;
+    box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.7);
+    border-radius: 3px;
 }
 
 button:hover {
@@ -121,6 +155,7 @@ button:hover {
     font-weight: bold;
 }
 
+#board-size,
 #game-count {
     width: 70px;
     padding: 8px;
@@ -139,10 +174,6 @@ button:hover {
 
 output {
     font-weight: bold;
-}
-
-canvas:hover {
-    background-color: lightblue;
 }
 
 @media (max-width: 800px) {
