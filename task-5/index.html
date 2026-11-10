@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>4×4 Three-Machine Tic-Tac-Toe</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+
+  <body>
+    <header>
+      <h1 id="head">4×4 Three-Machine Tic-Tac-Toe</h1>
+    </header>
+
+    <section id="controls" aria-label="Game controls">
+      <form id="game-form">
+        <label for="game-count">Number of games (1-10):</label>
+        <input
+          id="game-count"
+          name="game-count"
+          type="number"
+          min="1"
+          max="10"
+          step="1"
+          value="1"
+          required
+        />
+        <button id="run-games" type="submit">Run games</button>
+      </form>
+      <p id="status" role="status" aria-live="polite">
+        Enter a number of games and select Run games.
+      </p>
+    </section>
+
+    <section id="game">
+      <div id="tic" aria-label="4 by 4 Tic-Tac-Toe board">
+        <canvas id="canvas1" width="100" height="100" aria-label="Top left"></canvas>
+        <canvas id="canvas2" width="100" height="100" aria-label="Top middle"></canvas>
+        <canvas id="canvas3" width="100" height="100" aria-label="Top right"></canvas>
+        <canvas id="canvas4" width="100" height="100" aria-label="Top far right"></canvas>
+        <br />
+
+        <canvas id="canvas5" width="100" height="100" aria-label="Second row left"></canvas>
+        <canvas id="canvas6" width="100" height="100" aria-label="Second row middle left"></canvas>
+        <canvas id="canvas7" width="100" height="100" aria-label="Second row middle right"></canvas>
+        <canvas id="canvas8" width="100" height="100" aria-label="Second row right"></canvas>
+        <br />
+
+        <canvas id="canvas9" width="100" height="100" aria-label="Third row left"></canvas>
+        <canvas id="canvas10" width="100" height="100" aria-label="Third row middle left"></canvas>
+        <canvas id="canvas11" width="100" height="100" aria-label="Third row middle right"></canvas>
+        <canvas id="canvas12" width="100" height="100" aria-label="Third row right"></canvas>
+        <br />
+
+        <canvas id="canvas13" width="100" height="100" aria-label="Bottom left"></canvas>
+        <canvas id="canvas14" width="100" height="100" aria-label="Bottom middle left"></canvas>
+        <canvas id="canvas15" width="100" height="100" aria-label="Bottom middle right"></canvas>
+        <canvas id="canvas16" width="100" height="100" aria-label="Bottom right"></canvas>
+      </div>
+
+      <div id="rules" aria-label="Game results">
+        <h2>Results</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Machine</th>
+              <th>Wins</th>
+              <th>Losses</th>
+              <th>Draws</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">X</th>
+              <td><output id="x-wins">0</output></td>
+              <td><output id="x-losses">0</output></td>
+              <td><output id="x-draws">0</output></td>
+            </tr>
+            <tr>
+              <th scope="row">O</th>
+              <td><output id="o-wins">0</output></td>
+              <td><output id="o-losses">0</output></td>
+              <td><output id="o-draws">0</output></td>
+            </tr>
+            <tr>
+              <th scope="row">I</th>
+              <td><output id="i-wins">0</output></td>
+              <td><output id="i-losses">0</output></td>
+              <td><output id="i-draws">0</output></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <script type="text/javascript" src="script.js"></script>
+  </body>
+</html>
