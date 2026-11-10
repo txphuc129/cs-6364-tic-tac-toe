@@ -9,28 +9,17 @@ window.onload = function () {
   var symbol;
   var winner;
   var gameOver = false;
-  var players = ['X', 'O', 'I'];
+  var players = ['X', 'O', '#'];
   var wins = {
     X: { wins: 0, losses: 0, draws: 0 },
     O: { wins: 0, losses: 0, draws: 0 },
-    I: { wins: 0, losses: 0, draws: 0 },
+    '#': { wins: 0, losses: 0, draws: 0 },
   };
   var moveDelay = 120;
   var searchDepth = 4;
   filled = new Array();
   symbol = new Array();
-  winner = [
-    [0, 1, 2, 3],
-    [4, 5, 6, 7],
-    [8, 9, 10, 11],
-    [12, 13, 14, 15],
-    [0, 4, 8, 12],
-    [1, 5, 9, 13],
-    [2, 6, 10, 14],
-    [3, 7, 11, 15],
-    [0, 5, 10, 15],
-    [3, 6, 9, 12],
-  ];
+  winner = generateWinningLines(4, 3);
 
   for (var i = 0; i < 16; i++) {
     filled[i] = false;
@@ -46,12 +35,12 @@ window.onload = function () {
   var oWinsOutput = document.getElementById('o-wins');
   var oLossesOutput = document.getElementById('o-losses');
   var oDrawsOutput = document.getElementById('o-draws');
-  var iWinsOutput = document.getElementById('i-wins');
-  var iLossesOutput = document.getElementById('i-losses');
-  var iDrawsOutput = document.getElementById('i-draws');
+  var hashWinsOutput = document.getElementById('hash-wins');
+  var hashLossesOutput = document.getElementById('hash-losses');
+  var hashDrawsOutput = document.getElementById('hash-draws');
   document.getElementById('game-form').addEventListener('submit', runGames);
 
-  //2.Drawing X's, O's, and I's
+  //2.Drawing X's, O's, and #'s
   //Draw X
   function drawX() {
     box.style.backgroundColor = '#fb5181';
@@ -82,22 +71,49 @@ window.onload = function () {
     symbol[next] = players[1];
   }
 
-  //Drawing I
-  function drawI(next) {
+  //Drawing #
+  function drawHash(next) {
     box.style.backgroundColor = '#8cc8ff';
-    ctx.beginPath();
-    ctx.moveTo(30, 18);
-    ctx.lineTo(70, 18);
-    ctx.moveTo(50, 18);
-    ctx.lineTo(50, 82);
-    ctx.moveTo(30, 82);
-    ctx.lineTo(70, 82);
-    ctx.lineWidth = 14;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = 'white';
-    ctx.stroke();
+    ctx.font = 'bold 72px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'white';
+    ctx.fillText('#', 50, 50);
 
     symbol[next] = players[2];
+  }
+
+  function generateWinningLines(size, length) {
+    var lines = [];
+    for (var row = 0; row < size; row++) {
+      for (var startColumn = 0; startColumn <= size - length; startColumn++) {
+        var horizontal = [];
+        var vertical = [];
+        for (var offset = 0; offset < length; offset++) {
+          horizontal.push(row * size + startColumn + offset);
+          vertical.push((startColumn + offset) * size + row);
+        }
+        lines.push(horizontal, vertical);
+      }
+    }
+
+    for (var startRow = 0; startRow <= size - length; startRow++) {
+      for (var startColumn = 0; startColumn <= size - length; startColumn++) {
+        var diagonalDown = [];
+        for (var offset = 0; offset < length; offset++) {
+          diagonalDown.push((startRow + offset) * size + startColumn + offset);
+        }
+        lines.push(diagonalDown);
+      }
+      for (var rightColumn = length - 1; rightColumn < size; rightColumn++) {
+        var diagonalUpRight = [];
+        for (var offset = 0; offset < length; offset++) {
+          diagonalUpRight.push((startRow + offset) * size + rightColumn - offset);
+        }
+        lines.push(diagonalUpRight);
+      }
+    }
+    return lines;
   }
 
   //3. Winner check function
@@ -142,7 +158,7 @@ window.onload = function () {
     } else if (playerIndex === 1) {
       drawO(nextMove.id);
     } else {
-      drawI(nextMove.id);
+      drawHash(nextMove.id);
     }
     filled[nextMove.id] = true;
     turn++;
@@ -168,7 +184,7 @@ window.onload = function () {
       return { scores: evaluateBoard(newSymbol) };
     }
 
-    //Each player selects the child with the highest value for their own score.
+    //Each player selects the child with the highest value for their own score
     var bestMove;
     for (var i = 0; i < empty.length; i++) {
       var move = empty[i];
@@ -184,9 +200,9 @@ window.onload = function () {
     return bestMove;
   }
 
-  function evaluateBoard(newSymbol) {
+  function evaluateBoard(currentSymbols) {
     var scores = [0, 0, 0];
-    var lineWeights = [0, 1, 8, 64, 512];
+    var lineWeights = [0, 1, 8, 64];
 
     for (var i = 0; i < winner.length; i++) {
       var line = winner[i];
@@ -195,7 +211,7 @@ window.onload = function () {
       var blocked = false;
 
       for (var j = 0; j < line.length; j++) {
-        var markOwner = players.indexOf(newSymbol[line[j]]);
+        var markOwner = players.indexOf(currentSymbols[line[j]]);
         if (markOwner !== -1) {
           if (linePlayer !== -1 && linePlayer !== markOwner) {
             blocked = true;
@@ -238,9 +254,9 @@ window.onload = function () {
     oWinsOutput.value = wins.O.wins;
     oLossesOutput.value = wins.O.losses;
     oDrawsOutput.value = wins.O.draws;
-    iWinsOutput.value = wins.I.wins;
-    iLossesOutput.value = wins.I.losses;
-    iDrawsOutput.value = wins.I.draws;
+    hashWinsOutput.value = wins['#'].wins;
+    hashLossesOutput.value = wins['#'].losses;
+    hashDrawsOutput.value = wins['#'].draws;
   }
 
   function recordWin(winnerSymbol) {
@@ -262,7 +278,7 @@ window.onload = function () {
   async function playGame(gameNumber, totalGames) {
     // Clear the board before starting a new game
     clearBoard();
-    // Until the game ends, each machine takes a turn. Three matching marks in a line wins.
+    // Until the game ends, each machine takes a turn. Three matching marks in a line wins
     while (gameOver === false) {
       var playerIndex = turn % players.length;
       var player = players[playerIndex];
@@ -300,7 +316,7 @@ window.onload = function () {
     wins = {
       X: { wins: 0, losses: 0, draws: 0 },
       O: { wins: 0, losses: 0, draws: 0 },
-      I: { wins: 0, losses: 0, draws: 0 },
+      '#': { wins: 0, losses: 0, draws: 0 },
     };
     updateResults();
 
@@ -324,12 +340,12 @@ window.onload = function () {
         wins.O.losses +
         ' losses, ' +
         wins.O.draws +
-        ' draws. I: ' +
-        wins.I.wins +
+        ' draws. #: ' +
+        wins['#'].wins +
         ' wins, ' +
-        wins.I.losses +
+        wins['#'].losses +
         ' losses, ' +
-        wins.I.draws +
+        wins['#'].draws +
         ' draws.';
     } catch (error) {
       status.textContent = 'Unable to complete the games: ' + error.message;

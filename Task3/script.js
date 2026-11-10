@@ -11,8 +11,12 @@ window.onload = function () {
   var gameOver = false;
   var playerX = 'X';
   var playerO = 'O';
+  var players = [playerX, playerO];
   var result = {};
-  var wins = { X: 0, O: 0, draws: 0 };
+  var wins = {
+    X: { wins: 0, losses: 0, draws: 0 },
+    O: { wins: 0, losses: 0, draws: 0 },
+  };
   var moveDelay = 120;
   filled = new Array();
   symbol = new Array();
@@ -35,8 +39,11 @@ window.onload = function () {
   var runButton = document.getElementById('run-games');
   var status = document.getElementById('status');
   var xWinsOutput = document.getElementById('x-wins');
+  var xLossesOutput = document.getElementById('x-losses');
+  var xDrawsOutput = document.getElementById('x-draws');
   var oWinsOutput = document.getElementById('o-wins');
-  var drawsOutput = document.getElementById('draws');
+  var oLossesOutput = document.getElementById('o-losses');
+  var oDrawsOutput = document.getElementById('o-draws');
   document.getElementById('game-form').addEventListener('submit', runGames);
 
   //2.Drawing X's and O's
@@ -145,7 +152,7 @@ window.onload = function () {
         result = miniMaxWithAlphaBeta(newSymbol, playerO, alpha, beta);
         curMove.score = result.score;
 
-        //Alpha-beta pruning: update X's best guaranteed score and stop at a beta cutoff.
+        //Alpha-beta pruning: update X's best guaranteed score and stop at a beta cutoff
         if (curMove.score > alpha) {
           alpha = curMove.score;
         }
@@ -159,7 +166,7 @@ window.onload = function () {
         result = miniMaxWithAlphaBeta(newSymbol, playerX, alpha, beta);
         curMove.score = result.score;
 
-        //Alpha-beta pruning: update O's best guaranteed score and stop at an alpha cutoff.
+        //Alpha-beta pruning: update O's best guaranteed score and stop at an alpha cutoff
         if (curMove.score < beta) {
           beta = curMove.score;
         }
@@ -176,7 +183,7 @@ window.onload = function () {
 
     //Calculate score of intermediate states - best move + score with respect to that player + return statement
     var bestMove;
-    //Player X maximizes the score; Player O minimizes the score.
+    //Player X maximizes the score; Player O minimizes the score
     if (player === playerX) {
       var highestScore = -1000;
       for (var j = 0; j < posMoves.length; j++) {
@@ -216,9 +223,28 @@ window.onload = function () {
   }
 
   function updateResults() {
-    xWinsOutput.value = wins.X;
-    oWinsOutput.value = wins.O;
-    drawsOutput.value = wins.draws;
+    xWinsOutput.value = wins.X.wins;
+    xLossesOutput.value = wins.X.losses;
+    xDrawsOutput.value = wins.X.draws;
+    oWinsOutput.value = wins.O.wins;
+    oLossesOutput.value = wins.O.losses;
+    oDrawsOutput.value = wins.O.draws;
+  }
+
+  function recordWin(winnerSymbol) {
+    for (var i = 0; i < players.length; i++) {
+      if (players[i] === winnerSymbol) {
+        wins[winnerSymbol].wins++;
+      } else {
+        wins[players[i]].losses++;
+      }
+    }
+  }
+
+  function recordDraw() {
+    for (var i = 0; i < players.length; i++) {
+      wins[players[i]].draws++;
+    }
   }
 
   async function playGame(gameNumber, totalGames) {
@@ -233,12 +259,12 @@ window.onload = function () {
       await delay(moveDelay);
 
       if (winnerCheck(symbol, player)) {
-        wins[player]++;
+        recordWin(player);
         gameOver = true;
         status.textContent =
           'Game ' + gameNumber + ' of ' + totalGames + ': Machine ' + player + ' won.';
       } else if (turn > 9) {
-        wins.draws++;
+        recordDraw();
         gameOver = true;
         status.textContent = 'Game ' + gameNumber + ' of ' + totalGames + ': draw.';
       }
@@ -258,7 +284,10 @@ window.onload = function () {
 
     runButton.disabled = true;
     gameCountInput.disabled = true;
-    wins = { X: 0, O: 0, draws: 0 };
+    wins = {
+      X: { wins: 0, losses: 0, draws: 0 },
+      O: { wins: 0, losses: 0, draws: 0 },
+    };
     updateResults();
 
     try {
@@ -269,13 +298,19 @@ window.onload = function () {
       status.textContent =
         'Completed ' +
         gameCount +
-        ' games. Machine X wins: ' +
-        wins.X +
-        ', Machine O wins: ' +
-        wins.O +
-        ', draws: ' +
-        wins.draws +
-        '.';
+        ' games. Machine X: ' +
+        wins.X.wins +
+        ' wins, ' +
+        wins.X.losses +
+        ' losses, ' +
+        wins.X.draws +
+        ' draws. Machine O: ' +
+        wins.O.wins +
+        ' wins, ' +
+        wins.O.losses +
+        ' losses, ' +
+        wins.O.draws +
+        ' draws.';
     } catch (error) {
       status.textContent = 'Unable to complete the games: ' + error.message;
     } finally {

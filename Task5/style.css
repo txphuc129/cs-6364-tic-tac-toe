@@ -39,7 +39,7 @@ h1#head {
     border: 3px solid dodgerblue;
 }
 
-.cell {
+canvas.cell {
     box-sizing: border-box;
     min-width: 0;
     min-height: 0;
@@ -47,35 +47,21 @@ h1#head {
     height: 100%;
     margin: 0;
     padding: 0;
-    display: grid;
-    place-items: center;
+    display: block;
     border: 1px solid dodgerblue;
     background-color: lightyellow;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    line-height: 1;
-    box-shadow: none;
-    border-radius: 0;
-}
-
-.cell:disabled {
-    opacity: 1;
-    color: white;
 }
 
 .cell.mark-player-0 {
     background-color: #fb5181;
-    color: white;
 }
 
 .cell.mark-player-1 {
     background-color: #93f273;
-    color: white;
 }
 
-.cell.mark-I {
+.cell.mark-hash {
     background-color: #8cc8ff;
-    color: white;
 }
 
 #rules {

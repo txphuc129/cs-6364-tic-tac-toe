@@ -1,17 +1,20 @@
 //6 parts
 window.onload = function () {
   //1. Initial states
-  var players = ['X', 'O', 'I'];
+  var num;
+  var box;
+  var ctx;
+  var players = ['X', 'O', '#'];
   var boardSize = 3;
   var symbols = [];
   var cells = [];
-  var winningLines = [];
+  var winner = [];
   var turn = 0;
   var gameOver = false;
   var wins = {
     X: { wins: 0, losses: 0, draws: 0 },
     O: { wins: 0, losses: 0, draws: 0 },
-    I: { wins: 0, losses: 0, draws: 0 },
+    '#': { wins: 0, losses: 0, draws: 0 },
   };
   var moveDelay = 120;
 
@@ -27,34 +30,84 @@ window.onload = function () {
   var oWinsOutput = document.getElementById('o-wins');
   var oLossesOutput = document.getElementById('o-losses');
   var oDrawsOutput = document.getElementById('o-draws');
-  var iWinsOutput = document.getElementById('i-wins');
-  var iLossesOutput = document.getElementById('i-losses');
-  var iDrawsOutput = document.getElementById('i-draws');
+  var hashWinsOutput = document.getElementById('hash-wins');
+  var hashLossesOutput = document.getElementById('hash-losses');
+  var hashDrawsOutput = document.getElementById('hash-draws');
 
   document.getElementById('game-form').addEventListener('submit', runGames);
   boardSizeInput.addEventListener('input', updateBoardSize);
   renderBoard(boardSize);
 
-  //2. Generate B-in-a-row winning patterns and draw the selected board.
-  function generateWinningLines(size) {
+  //2. Draw each machine's mark and generate the selected board's winning lines
+  function drawX() {
+    box.style.backgroundColor = '#fb5181';
+    ctx.beginPath();
+    ctx.moveTo(15, 15);
+    ctx.lineTo(85, 85);
+    ctx.moveTo(85, 15);
+    ctx.lineTo(15, 85);
+    ctx.lineWidth = 21;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'white';
+    ctx.stroke();
+    ctx.closePath();
+
+    symbols[num - 1] = players[0];
+  }
+
+  function drawO(next) {
+    box.style.backgroundColor = '#93f273';
+    ctx.beginPath();
+    ctx.arc(50, 50, 35, 0, 2 * Math.PI);
+    ctx.lineWidth = 20;
+    ctx.strokeStyle = 'white';
+    ctx.stroke();
+    ctx.closePath();
+
+    symbols[next] = players[1];
+  }
+
+  function drawHash(next) {
+    box.style.backgroundColor = '#8cc8ff';
+    ctx.font = 'bold 72px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'white';
+    ctx.fillText('#', 50, 50);
+
+    symbols[next] = players[2];
+  }
+
+  function generateWinningLines(size, length) {
     var lines = [];
     for (var row = 0; row < size; row++) {
-      var rowLine = [];
-      var columnLine = [];
-      for (var column = 0; column < size; column++) {
-        rowLine.push(row * size + column);
-        columnLine.push(column * size + row);
+      for (var startColumn = 0; startColumn <= size - length; startColumn++) {
+        var horizontal = [];
+        var vertical = [];
+        for (var offset = 0; offset < length; offset++) {
+          horizontal.push(row * size + startColumn + offset);
+          vertical.push((startColumn + offset) * size + row);
+        }
+        lines.push(horizontal, vertical);
       }
-      lines.push(rowLine, columnLine);
     }
 
-    var diagonalDown = [];
-    var diagonalUp = [];
-    for (var index = 0; index < size; index++) {
-      diagonalDown.push(index * size + index);
-      diagonalUp.push(index * size + (size - index - 1));
+    for (var startRow = 0; startRow <= size - length; startRow++) {
+      for (var startColumn = 0; startColumn <= size - length; startColumn++) {
+        var diagonalDown = [];
+        for (var offset = 0; offset < length; offset++) {
+          diagonalDown.push((startRow + offset) * size + startColumn + offset);
+        }
+        lines.push(diagonalDown);
+      }
+      for (var rightColumn = length - 1; rightColumn < size; rightColumn++) {
+        var diagonalUpRight = [];
+        for (var offset = 0; offset < length; offset++) {
+          diagonalUpRight.push((startRow + offset) * size + rightColumn - offset);
+        }
+        lines.push(diagonalUpRight);
+      }
     }
-    lines.push(diagonalDown, diagonalUp);
     return lines;
   }
 
@@ -62,7 +115,7 @@ window.onload = function () {
     boardSize = size;
     symbols = new Array(size * size).fill('');
     cells = [];
-    winningLines = generateWinningLines(size);
+    winner = generateWinningLines(size, 3);
     turn = 0;
     gameOver = false;
     heading.textContent = size + 'x' + size + ' Three-Machine Tic-Tac-Toe';
@@ -71,13 +124,12 @@ window.onload = function () {
     board.replaceChildren();
 
     for (var index = 0; index < size * size; index++) {
-      var cell = document.createElement('button');
-      cell.type = 'button';
+      var cell = document.createElement('canvas');
+      cell.id = 'canvas' + (index + 1);
+      cell.width = 100;
+      cell.height = 100;
       cell.className = 'cell';
-      cell.disabled = true;
-      cell.textContent = '';
       cell.setAttribute('aria-label', 'Cell ' + (index + 1) + ', empty');
-      cell.style.fontSize = Math.min(56, Math.floor(460 / size)) + 'px';
       cells.push(cell);
       board.appendChild(cell);
     }
@@ -95,7 +147,7 @@ window.onload = function () {
       wins = {
         X: { wins: 0, losses: 0, draws: 0 },
         O: { wins: 0, losses: 0, draws: 0 },
-        I: { wins: 0, losses: 0, draws: 0 },
+        '#': { wins: 0, losses: 0, draws: 0 },
       };
       updateResults();
       status.textContent =
@@ -103,9 +155,9 @@ window.onload = function () {
     }
   }
 
-  //3. Check for a win and find empty cells on the current board.
+  //3. Check for a win and find empty cells on the current board
   function winnerCheck(currentSymbols, player) {
-    return winningLines.some(function (line) {
+    return winner.some(function (line) {
       return line.every(function (cellIndex) {
         return currentSymbols[cellIndex] === player;
       });
@@ -122,11 +174,12 @@ window.onload = function () {
     return empty;
   }
 
-  //4. Evaluate the board for each machine and return potential win scores.
+  //4. Evaluate the board for each machine and return potential win scores
   function evaluateBoard(currentSymbols) {
     var scores = [0, 0, 0];
-    for (var i = 0; i < winningLines.length; i++) {
-      var line = winningLines[i];
+    var lineWeights = [0, 1, 8, 64];
+    for (var i = 0; i < winner.length; i++) {
+      var line = winner[i];
       var linePlayer = -1;
       var markCount = 0;
       var blocked = false;
@@ -144,30 +197,37 @@ window.onload = function () {
       }
 
       if (!blocked && linePlayer !== -1) {
-        scores[linePlayer] += Math.pow(4, markCount - 1);
+        scores[linePlayer] += lineWeights[markCount];
       }
     }
     return scores;
   }
 
-  //5. Let each machine play using multi-player minimax.
+  //5. Let each machine play using multi-player minimax
   function playMachineMove(playerIndex) {
     var nextMove = chooseMove(playerIndex);
     if (!nextMove || !Number.isInteger(nextMove.id) || symbols[nextMove.id] !== '') {
       throw new Error('The machine player did not return a valid move.');
     }
 
-    var player = players[playerIndex];
-    symbols[nextMove.id] = player;
-    cells[nextMove.id].textContent = player;
-    cells[nextMove.id].setAttribute('aria-label', 'Cell ' + (nextMove.id + 1) + ', ' + player);
-    cells[nextMove.id].classList.add('mark-player-' + playerIndex);
+    num = nextMove.id + 1;
+    box = cells[nextMove.id];
+    ctx = box.getContext('2d');
+    if (playerIndex === 0) {
+      drawX();
+    } else if (playerIndex === 1) {
+      drawO(nextMove.id);
+    } else {
+      drawHash(nextMove.id);
+    }
+    box.setAttribute('aria-label', 'Cell ' + num + ', ' + players[playerIndex]);
+    box.classList.add(playerIndex === 2 ? 'mark-hash' : 'mark-player-' + playerIndex);
     turn++;
   }
 
-  //Minimax function for three players (Max^n) with a node budget.
+  //Minimax function for three players (Max^n) with a node budget
   function miniMax(currentSymbols, playerIndex, depth, search) {
-    //Stop this search iteration before it exceeds the node budget.
+    //Stop this search iteration before it exceeds the node budget
     if (search.nodes >= search.nodeBudget) {
       search.stopped = true;
       return null;
@@ -217,7 +277,7 @@ window.onload = function () {
     };
     var maximumDepth = Math.min(8, emptyBoxes(symbols).length);
 
-    //Keep the best move from the deepest iteration that completed in budget.
+    //Keep the best move from the deepest iteration that completed in budget
     for (var depth = 1; depth <= maximumDepth; depth++) {
       var result = miniMax(symbols, playerIndex, depth, search);
       if (search.stopped) {
@@ -237,13 +297,15 @@ window.onload = function () {
     turn = 0;
     gameOver = false;
     for (var index = 0; index < cells.length; index++) {
-      cells[index].textContent = '';
+      ctx = cells[index].getContext('2d');
+      ctx.clearRect(0, 0, 100, 100);
+      cells[index].style.backgroundColor = 'lightyellow';
       cells[index].setAttribute('aria-label', 'Cell ' + (index + 1) + ', empty');
       cells[index].className = 'cell';
     }
   }
 
-  //6. Track results and play the requested batch of games.
+  //6. Track results and play the requested batch of games
   function updateResults() {
     xWinsOutput.value = wins.X.wins;
     xLossesOutput.value = wins.X.losses;
@@ -251,9 +313,9 @@ window.onload = function () {
     oWinsOutput.value = wins.O.wins;
     oLossesOutput.value = wins.O.losses;
     oDrawsOutput.value = wins.O.draws;
-    iWinsOutput.value = wins.I.wins;
-    iLossesOutput.value = wins.I.losses;
-    iDrawsOutput.value = wins.I.draws;
+    hashWinsOutput.value = wins['#'].wins;
+    hashLossesOutput.value = wins['#'].losses;
+    hashDrawsOutput.value = wins['#'].draws;
   }
 
   function recordWin(winnerSymbol) {
@@ -335,7 +397,7 @@ window.onload = function () {
     wins = {
       X: { wins: 0, losses: 0, draws: 0 },
       O: { wins: 0, losses: 0, draws: 0 },
-      I: { wins: 0, losses: 0, draws: 0 },
+      '#': { wins: 0, losses: 0, draws: 0 },
     };
     updateResults();
 
@@ -364,12 +426,12 @@ window.onload = function () {
         wins.O.losses +
         ' losses, ' +
         wins.O.draws +
-        ' draws. I: ' +
-        wins.I.wins +
+        ' draws. #: ' +
+        wins['#'].wins +
         ' wins, ' +
-        wins.I.losses +
+        wins['#'].losses +
         ' losses, ' +
-        wins.I.draws +
+        wins['#'].draws +
         ' draws.';
     } catch (error) {
       console.error(error);
