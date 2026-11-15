@@ -11,7 +11,6 @@ window.onload = function () {
   var gameOver = false;
   var human = 'X';
   var ai = 'O';
-  var result = {};
   filled = new Array();
   symbol = new Array();
   winner = [
@@ -137,10 +136,11 @@ window.onload = function () {
 
           if (turn > 9 && gameOver !== true) {
             document.getElementById('result').innerText = 'GAME OVER! IT WAS A DRAW!';
+            gameOver = true;
             return;
           }
 
-          if (turn % 2 == 0) {
+          if (turn % 2 === 0 && gameOver === false) {
             playAI();
           }
         }
@@ -169,8 +169,6 @@ window.onload = function () {
 
   //playAI()
   function playAI() {
-    //symbol = ['X','','O','O','','O','','X','X'], 'O'
-    //nextMove = {id:4,score:10}
     var nextMove = miniMaxWithAlphaBeta(symbol, ai, -Infinity, Infinity); //object that stores id of next move and score of the box for next move
     var nextId = 'canvas' + (nextMove.id + 1);
     box = document.getElementById(nextId);
@@ -191,6 +189,7 @@ window.onload = function () {
         //draw condition
         if (turn > 9 && gameOver !== true) {
           document.getElementById('result').innerText = 'GAME OVER! IT WAS A DRAW!';
+          gameOver = true;
         }
       }
     } else {
@@ -199,9 +198,8 @@ window.onload = function () {
   }
 
   //miniMaxWithAlphaBeta function
-  //For this example/explanation, AI - X, human - O
-  //symbol = ['X','','O','X','','O','','X','X'], 'O' -> human
   function miniMaxWithAlphaBeta(newSymbol, player, alpha, beta) {
+    var result = {};
     var empty = [];
     empty = emptyBoxes(newSymbol); //[]
 
@@ -210,66 +208,36 @@ window.onload = function () {
     } else if (winnerCheck(newSymbol, ai)) {
       return { score: 10 }; //AI wins
     } else if (empty.length === 0) {
-      if (winnerCheck(newSymbol, human)) {
-        return { score: -10 };
-      } else if (winnerCheck(newSymbol, ai)) {
-        return { score: 10 };
-      }
       return { score: 0 }; //game is draw
     }
 
-    //if its not a terminal state
-    //possible moves- their indices and score values
     var posMoves = [];
-    //[4] - Example
     for (var i = 0; i < empty.length; i++) {
-      //current move - index of current move,score
       var curMove = {};
       //generate the new board with the current move
       curMove.id = empty[i]; //4
       newSymbol[empty[i]] = player; //AI
 
       if (player === ai) {
-        //result = [{id:4,score:-10}],
-        //curMove = {id:1,score:-10}
         result = miniMaxWithAlphaBeta(newSymbol, human, alpha, beta); //index and score
         curMove.score = result.score; //10
 
-        // Alpha-beta pruning: if the AI already has a score better than beta, the opponent would never allow this branch to be chosen
-        if (curMove.score > alpha) {
-          alpha = curMove.score;
-        }
-        if (beta <= alpha) {
-          newSymbol[empty[i]] = '';
-          posMoves.push(curMove);
-          break;
-        }
+        // Update alpha for the maximizing player
+        alpha = Math.max(alpha, curMove.score);
       } else {
-        //result = [{id:6, score:10}]
-        //curMove = {id:6, score:10}
         result = miniMaxWithAlphaBeta(newSymbol, ai, alpha, beta);
         curMove.score = result.score; //-10
 
-        // Alpha-beta pruning: if the human can force a score lower than alpha, the maximizing player will never choose this branch
-        if (curMove.score < beta) {
-          beta = curMove.score;
-        }
-        if (beta <= alpha) {
-          newSymbol[empty[i]] = '';
-          posMoves.push(curMove);
-          break;
-        }
-        //level 2 move 1 curMove = {id: 6, score: 10}
-        //level 3 move 1 -> posMoves = [{id:4,score:10}]
-        //level 2 move 1 -> posMoves = [{id:6, score:10}]
+        // Update beta for the minimizing player
+        beta = Math.min(beta, curMove.score);
       }
-
-      //level 1 move 1 -> posMoves = [{id:4,score:-10},{id:6, score:10}]
-      //level 0 -> posMoves = [{id:4,score:10},{id:6,score:10},{id:1,score:-10}]
-      //empty:[1,4,6]
       newSymbol[empty[i]] = '';
 
       posMoves.push(curMove); //[{id: 1, score: -10}]
+
+      if (beta <= alpha) {
+        break;
+      }
     }
 
     //Calculate score of intermediate states - best move + score with respect to that player + return statement
@@ -277,7 +245,6 @@ window.onload = function () {
     //AI - max player (always) -> choose maximum value, human - min player -> choose minimum value
 
     if (player === ai) {
-      //posMoves = [{id:4,score:10},{id:6,score:10},{id:1,score:-10}]
       var highestScore = -1000;
       for (var j = 0; j < posMoves.length; j++) {
         if (posMoves[j].score > highestScore) {
@@ -285,9 +252,7 @@ window.onload = function () {
           bestMove = j; //0
         }
       }
-    }
-    //posMoves = [{id:4,score:-10},{id:6, score:10}]
-    else {
+    } else {
       var lowestScore = 1000;
       for (var j = 0; j < posMoves.length; j++) {
         if (posMoves[j].score < lowestScore) {
@@ -297,6 +262,5 @@ window.onload = function () {
       }
     }
     return posMoves[bestMove];
-    //posMoves[0] = {id:4,score:10}
   }
 };
