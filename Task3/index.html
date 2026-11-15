@@ -51,12 +51,30 @@
 
       <div id="rules" aria-label="Game results">
         <h2>Results</h2>
-        <p>Machine X wins: <output id="x-wins">0</output></p>
-        <p>Machine X losses: <output id="x-losses">0</output></p>
-        <p>Machine X draws: <output id="x-draws">0</output></p>
-        <p>Machine O wins: <output id="o-wins">0</output></p>
-        <p>Machine O losses: <output id="o-losses">0</output></p>
-        <p>Machine O draws: <output id="o-draws">0</output></p>
+        <table>
+          <thead>
+            <tr>
+              <th>Machine</th>
+              <th>Wins</th>
+              <th>Losses</th>
+              <th>Draws</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">X</th>
+              <td><output id="x-wins">0</output></td>
+              <td><output id="x-losses">0</output></td>
+              <td><output id="x-draws">0</output></td>
+            </tr>
+            <tr>
+              <th scope="row">O</th>
+              <td><output id="o-wins">0</output></td>
+              <td><output id="o-losses">0</output></td>
+              <td><output id="o-draws">0</output></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </section>
 

@@ -12,7 +12,6 @@ window.onload = function () {
   var playerX = 'X';
   var playerO = 'O';
   var players = [playerX, playerO];
-  var result = {};
   var wins = {
     X: { wins: 0, losses: 0, draws: 0 },
     O: { wins: 0, losses: 0, draws: 0 },
@@ -125,6 +124,7 @@ window.onload = function () {
 
   //Minimax function with alpha-beta pruning
   function miniMaxWithAlphaBeta(newSymbol, player, alpha, beta) {
+    var result = {};
     var empty = [];
     empty = emptyBoxes(newSymbol);
 
@@ -153,32 +153,22 @@ window.onload = function () {
         curMove.score = result.score;
 
         //Alpha-beta pruning: update X's best guaranteed score and stop at a beta cutoff
-        if (curMove.score > alpha) {
-          alpha = curMove.score;
-        }
-        if (beta <= alpha) {
-          newSymbol[empty[i]] = '';
-          posMoves.push(curMove);
-          break;
-        }
+        alpha = Math.max(alpha, curMove.score);
       } else {
         //Player O minimizes the score
         result = miniMaxWithAlphaBeta(newSymbol, playerX, alpha, beta);
         curMove.score = result.score;
 
         //Alpha-beta pruning: update O's best guaranteed score and stop at an alpha cutoff
-        if (curMove.score < beta) {
-          beta = curMove.score;
-        }
-        if (beta <= alpha) {
-          newSymbol[empty[i]] = '';
-          posMoves.push(curMove);
-          break;
-        }
+        beta = Math.min(beta, curMove.score);
       }
 
       newSymbol[empty[i]] = '';
       posMoves.push(curMove);
+
+      if (beta <= alpha) {
+        break;
+      }
     }
 
     //Calculate score of intermediate states - best move + score with respect to that player + return statement
