@@ -289,7 +289,7 @@ window.onload = function () {
 
     return posMoves[bestMove];
   }
-  
+
   //Iterative deepening to find the best move within the search budget
   function chooseMove(playerIndex) {
     var bestCompletedMove;
