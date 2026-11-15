@@ -133,18 +133,14 @@ window.onload = function () {
     } else if (winnerCheck(newSymbol, playerO)) {
       return { score: -10 }; //Player O wins
     } else if (empty.length === 0) {
-      return { score: 0 }; //Game is a draw
+      return { score: 0 }; //game is a draw
     }
 
-    //if its not a terminal state
-    //possible moves- their indices and score values
     var posMoves = [];
-    //[4] - Example
     for (var i = 0; i < empty.length; i++) {
-      //current move - index of current move,score
       var curMove = {};
       //generate the new board with the current move
-      curMove.id = empty[i]; //4
+      curMove.id = empty[i];
       newSymbol[empty[i]] = player;
 
       if (player === playerX) {
@@ -152,14 +148,14 @@ window.onload = function () {
         result = miniMaxWithAlphaBeta(newSymbol, playerO, alpha, beta);
         curMove.score = result.score;
 
-        //Alpha-beta pruning: update X's best guaranteed score and stop at a beta cutoff
+        // Update alpha for the maximizing player
         alpha = Math.max(alpha, curMove.score);
       } else {
         //Player O minimizes the score
         result = miniMaxWithAlphaBeta(newSymbol, playerX, alpha, beta);
         curMove.score = result.score;
 
-        //Alpha-beta pruning: update O's best guaranteed score and stop at an alpha cutoff
+        // Update beta for the minimizing player
         beta = Math.min(beta, curMove.score);
       }
 

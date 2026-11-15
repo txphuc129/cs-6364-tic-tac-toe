@@ -215,12 +215,12 @@ window.onload = function () {
     for (var i = 0; i < empty.length; i++) {
       var curMove = {};
       //generate the new board with the current move
-      curMove.id = empty[i]; //4
+      curMove.id = empty[i];
       newSymbol[empty[i]] = player; //AI
 
       if (player === ai) {
-        result = miniMaxWithAlphaBeta(newSymbol, human, alpha, beta); //index and score
-        curMove.score = result.score; //10
+        result = miniMaxWithAlphaBeta(newSymbol, human, alpha, beta);
+        curMove.score = result.score;
 
         // Update alpha for the maximizing player
         alpha = Math.max(alpha, curMove.score);
@@ -233,7 +233,7 @@ window.onload = function () {
       }
       newSymbol[empty[i]] = '';
 
-      posMoves.push(curMove); //[{id: 1, score: -10}]
+      posMoves.push(curMove);
 
       if (beta <= alpha) {
         break;
