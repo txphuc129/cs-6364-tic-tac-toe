@@ -145,7 +145,7 @@ window.onload = function () {
 
   //5. Let each machine play using multi-player minimax
   function playMachineMove(playerIndex) {
-    var nextMove = miniMax(symbol, playerIndex, searchDepth);
+    var nextMove = miniMax(symbol, playerIndex, searchDepth, true);
     if (!nextMove || !Number.isInteger(nextMove.id) || filled[nextMove.id]) {
       throw new Error('The machine player did not return a valid move.');
     }
@@ -165,7 +165,8 @@ window.onload = function () {
   }
 
   //Minimax function for three players (Max^n)
-  function miniMax(newSymbol, playerIndex, depth) {
+  function miniMax(newSymbol, playerIndex, depth, randomize) {
+    var result = {};
     var empty = [];
     empty = emptyBoxes(newSymbol);
 
@@ -180,25 +181,49 @@ window.onload = function () {
     if (empty.length === 0) {
       return { scores: [0, 0, 0] };
     }
+
     if (depth === 0) {
       return { scores: evaluateBoard(newSymbol) };
     }
 
-    //Each player selects the child with the highest value for their own score
-    var bestMove;
+    var posMoves = [];
     for (var i = 0; i < empty.length; i++) {
-      var move = empty[i];
-      newSymbol[move] = players[playerIndex];
-      var nextPlayer = (playerIndex + 1) % players.length;
-      var childResult = miniMax(newSymbol, nextPlayer, depth - 1);
-      newSymbol[move] = '';
+      var curMove = {};
+      //generate the new board with the current move
+      curMove.id = empty[i];
+      newSymbol[empty[i]] = players[playerIndex];
 
-      if (!bestMove || childResult.scores[playerIndex] > bestMove.scores[playerIndex]) {
-        bestMove = { id: move, scores: childResult.scores };
+      var nextPlayer = (playerIndex + 1) % players.length;
+      result = miniMax(newSymbol, nextPlayer, depth - 1, false);
+      curMove.scores = result.scores;
+
+      newSymbol[empty[i]] = '';
+      posMoves.push(curMove);
+    }
+
+    //Calculate score of intermediate states - best move + score with respect to that player + return statement
+    var bestMoves = [];
+    //Each player maximizes their own score
+    var highestScore = -Infinity;
+
+    for (var j = 0; j < posMoves.length; j++) {
+      if (posMoves[j].scores[playerIndex] > highestScore) {
+        highestScore = posMoves[j].scores[playerIndex];
+        bestMoves = [j];
+      } else if (posMoves[j].scores[playerIndex] === highestScore) {
+        bestMoves.push(j);
       }
     }
-    return bestMove;
+
+    var bestMove;
+    if (randomize) {
+      bestMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+    } else {
+      bestMove = bestMoves[0];
+    }
+    return posMoves[bestMove];
   }
+
 
   function evaluateBoard(currentSymbols) {
     var scores = [0, 0, 0];
