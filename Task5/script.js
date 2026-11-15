@@ -4,19 +4,22 @@ window.onload = function () {
   var num;
   var box;
   var ctx;
+  var turn = 0;
+  var filled;
+  var symbol;
+  var winner;
+  var gameOver = false;
   var players = ['X', 'O', '#'];
   var boardSize = 3;
-  var symbols = [];
-  var cells = [];
-  var winner = [];
-  var turn = 0;
-  var gameOver = false;
   var wins = {
     X: { wins: 0, losses: 0, draws: 0 },
     O: { wins: 0, losses: 0, draws: 0 },
     '#': { wins: 0, losses: 0, draws: 0 },
   };
   var moveDelay = 120;
+  filled = new Array();
+  symbol = new Array();
+  winner = generateWinningLines(boardSize, 3);
 
   var board = document.getElementById('tic');
   var boardSizeInput = document.getElementById('board-size');
@@ -34,11 +37,14 @@ window.onload = function () {
   var hashLossesOutput = document.getElementById('hash-losses');
   var hashDrawsOutput = document.getElementById('hash-draws');
 
+  boardSizeInput.min = 3;
+  boardSizeInput.max = 6;
   document.getElementById('game-form').addEventListener('submit', runGames);
   boardSizeInput.addEventListener('input', updateBoardSize);
   renderBoard(boardSize);
 
-  //2. Draw each machine's mark and generate the selected board's winning lines
+  //2.Drawing X's, O's, and #'s
+  //Draw X
   function drawX() {
     box.style.backgroundColor = '#fb5181';
     ctx.beginPath();
@@ -52,9 +58,10 @@ window.onload = function () {
     ctx.stroke();
     ctx.closePath();
 
-    symbols[num - 1] = players[0];
+    symbol[num - 1] = players[0];
   }
 
+  //Drawing O
   function drawO(next) {
     box.style.backgroundColor = '#93f273';
     ctx.beginPath();
@@ -64,9 +71,10 @@ window.onload = function () {
     ctx.stroke();
     ctx.closePath();
 
-    symbols[next] = players[1];
+    symbol[next] = players[1];
   }
 
+  //Drawing #
   function drawHash(next) {
     box.style.backgroundColor = '#8cc8ff';
     ctx.font = 'bold 72px Arial';
@@ -75,7 +83,7 @@ window.onload = function () {
     ctx.fillStyle = 'white';
     ctx.fillText('#', 50, 50);
 
-    symbols[next] = players[2];
+    symbol[next] = players[2];
   }
 
   function generateWinningLines(size, length) {
@@ -111,26 +119,30 @@ window.onload = function () {
     return lines;
   }
 
+  //Generate the board based on the selected size
   function renderBoard(size) {
     boardSize = size;
-    symbols = new Array(size * size).fill('');
-    cells = [];
+    filled = new Array();
+    symbol = new Array();
     winner = generateWinningLines(size, 3);
     turn = 0;
     gameOver = false;
+
     heading.textContent = size + 'x' + size + ' Three-Machine Tic-Tac-Toe';
     board.style.setProperty('--board-size', size);
     board.setAttribute('aria-label', size + ' by ' + size + ' Tic-Tac-Toe board');
     board.replaceChildren();
 
-    for (var index = 0; index < size * size; index++) {
+    for (var i = 0; i < size * size; i++) {
+      filled[i] = false;
+      symbol[i] = '';
+
       var cell = document.createElement('canvas');
-      cell.id = 'canvas' + (index + 1);
+      cell.id = 'canvas' + (i + 1);
       cell.width = 100;
       cell.height = 100;
       cell.className = 'cell';
-      cell.setAttribute('aria-label', 'Cell ' + (index + 1) + ', empty');
-      cells.push(cell);
+      cell.setAttribute('aria-label', 'Cell ' + (i + 1) + ', empty');
       board.appendChild(cell);
     }
   }
@@ -140,7 +152,7 @@ window.onload = function () {
     if (
       Number.isInteger(selectedSize) &&
       selectedSize >= 3 &&
-      selectedSize <= 10 &&
+      selectedSize <= 6 &&
       selectedSize !== boardSize
     ) {
       renderBoard(selectedSize);
@@ -155,29 +167,169 @@ window.onload = function () {
     }
   }
 
-  //3. Check for a win and find empty cells on the current board
-  function winnerCheck(currentSymbols, player) {
-    return winner.some(function (line) {
-      return line.every(function (cellIndex) {
-        return currentSymbols[cellIndex] === player;
-      });
-    });
+  //3.Winner check function
+  function winnerCheck(symbol, player) {
+    for (var j = 0; j < winner.length; j++) {
+      if (
+        symbol[winner[j][0]] == player &&
+        symbol[winner[j][1]] == player &&
+        symbol[winner[j][2]] == player
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
-  function emptyBoxes(currentSymbols) {
+  //4. Find the empty boxes
+  function emptyBoxes(newSymbol) {
+    var j = 0;
     var empty = [];
-    for (var index = 0; index < currentSymbols.length; index++) {
-      if (currentSymbols[index] === '') {
-        empty.push(index);
+    for (var i = 0; i < newSymbol.length; i++) {
+      if (players.indexOf(newSymbol[i]) === -1) {
+        empty[j] = i;
+        j++;
       }
     }
     return empty;
   }
 
-  //4. Evaluate the board for each machine and return potential win scores
+  //5. Let each machine play using multi-player minimax
+  function playMachineMove(playerIndex) {
+    var nextMove = chooseMove(playerIndex);
+    if (!nextMove || !Number.isInteger(nextMove.id) || filled[nextMove.id]) {
+      throw new Error('The machine player did not return a valid move.');
+    }
+
+    num = nextMove.id + 1;
+    box = document.getElementById('canvas' + num);
+    ctx = box.getContext('2d');
+    if (playerIndex === 0) {
+      drawX();
+    } else if (playerIndex === 1) {
+      drawO(nextMove.id);
+    } else {
+      drawHash(nextMove.id);
+    }
+    filled[nextMove.id] = true;
+    box.setAttribute('aria-label', 'Cell ' + num + ', ' + players[playerIndex]);
+    turn++;
+  }
+
+  
+  //Minimax function for three players (Max^n) with a node budget
+  function miniMax(newSymbol, playerIndex, depth, randomize, search) {
+    //Stop the search if the node budget has been reached
+    if (search.nodes >= search.nodeBudget) {
+      search.stopped = true;
+      return null;
+    }
+    search.nodes++;
+
+    var result = {};
+    var empty = [];
+    empty = emptyBoxes(newSymbol);
+
+    for (var player = 0; player < players.length; player++) {
+      if (winnerCheck(newSymbol, players[player])) {
+        var terminalScore = [-1000000000, -1000000000, -1000000000];
+        terminalScore[player] = 1000000000;
+        return { scores: terminalScore };
+      }
+    }
+
+    if (empty.length === 0) {
+      return { scores: [0, 0, 0] };
+    }
+
+    if (depth === 0) {
+      return { scores: evaluateBoard(newSymbol) };
+    }
+
+    var posMoves = [];
+    for (var i = 0; i < empty.length; i++) {
+      var curMove = {};
+      //generate the new board with the current move
+      curMove.id = empty[i];
+      newSymbol[empty[i]] = players[playerIndex];
+
+      var nextPlayer = (playerIndex + 1) % players.length;
+      result = miniMax(newSymbol, nextPlayer, depth - 1, false, search);
+
+      newSymbol[empty[i]] = '';
+
+      if (search.stopped) {
+        return null;
+      }
+
+      curMove.scores = result.scores;
+      posMoves.push(curMove);
+    }
+
+    //Calculate score of intermediate states - best move + score with respect to that player + return statement
+    var bestMoves = [];
+    //Each player maximizes their own score
+    var highestScore = -Infinity;
+
+    for (var j = 0; j < posMoves.length; j++) {
+      if (posMoves[j].scores[playerIndex] > highestScore) {
+        highestScore = posMoves[j].scores[playerIndex];
+        bestMoves = [j];
+      } else if (posMoves[j].scores[playerIndex] === highestScore) {
+        bestMoves.push(j);
+      }
+    }
+
+    var bestMove;
+    if (randomize) {
+      bestMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+    } else {
+      bestMove = bestMoves[0];
+    }
+
+    return posMoves[bestMove];
+  }
+  
+  //Iterative deepening to find the best move within the search budget
+  function chooseMove(playerIndex) {
+    var bestCompletedMove;
+    var search = {
+      nodes: 0,
+      nodeBudget: Math.max(100, Math.floor(20000 / symbol.length)),
+      stopped: false,
+    };
+    var maximumDepth = Math.min(8, emptyBoxes(symbol).length);
+
+    //Keep the best move from the deepest completed search
+    for (var depth = 1; depth <= maximumDepth; depth++) {
+      search.nodes = 0;
+      search.stopped = false;
+
+      var result = miniMax(symbol, playerIndex, depth, true, search);
+
+      if (search.stopped) {
+        break;
+      }
+
+      bestCompletedMove = result;
+    }
+
+    //If no iteration completed, choose a legal move
+    if (!bestCompletedMove) {
+      var empty = emptyBoxes(symbol);
+      if (empty.length === 0) {
+        return null;
+      }
+      return { id: empty[Math.floor(Math.random() * empty.length)] };
+    }
+
+    return bestCompletedMove;
+  }
+
   function evaluateBoard(currentSymbols) {
     var scores = [0, 0, 0];
     var lineWeights = [0, 1, 8, 64];
+
     for (var i = 0; i < winner.length; i++) {
       var line = winner[i];
       var linePlayer = -1;
@@ -203,109 +355,24 @@ window.onload = function () {
     return scores;
   }
 
-  //5. Let each machine play using multi-player minimax
-  function playMachineMove(playerIndex) {
-    var nextMove = chooseMove(playerIndex);
-    if (!nextMove || !Number.isInteger(nextMove.id) || symbols[nextMove.id] !== '') {
-      throw new Error('The machine player did not return a valid move.');
-    }
-
-    num = nextMove.id + 1;
-    box = cells[nextMove.id];
-    ctx = box.getContext('2d');
-    if (playerIndex === 0) {
-      drawX();
-    } else if (playerIndex === 1) {
-      drawO(nextMove.id);
-    } else {
-      drawHash(nextMove.id);
-    }
-    box.setAttribute('aria-label', 'Cell ' + num + ', ' + players[playerIndex]);
-    box.classList.add(playerIndex === 2 ? 'mark-hash' : 'mark-player-' + playerIndex);
-    turn++;
-  }
-
-  //Minimax function for three players (Max^n) with a node budget
-  function miniMax(currentSymbols, playerIndex, depth, search) {
-    //Stop this search iteration before it exceeds the node budget
-    if (search.nodes >= search.nodeBudget) {
-      search.stopped = true;
-      return null;
-    }
-    search.nodes++;
-
-    for (var player = 0; player < players.length; player++) {
-      if (winnerCheck(currentSymbols, players[player])) {
-        var terminalScore = [-1000000000, -1000000000, -1000000000];
-        terminalScore[player] = 1000000000;
-        return { scores: terminalScore };
-      }
-    }
-
-    var empty = emptyBoxes(currentSymbols);
-    if (empty.length === 0) {
-      return { scores: [0, 0, 0] };
-    }
-    if (depth === 0) {
-      return { scores: evaluateBoard(currentSymbols) };
-    }
-
-    var bestMove;
-    var nextPlayer = (playerIndex + 1) % players.length;
-    for (var i = 0; i < empty.length; i++) {
-      var move = empty[i];
-      currentSymbols[move] = players[playerIndex];
-      var childResult = miniMax(currentSymbols, nextPlayer, depth - 1, search);
-      currentSymbols[move] = '';
-
-      if (search.stopped) {
-        return null;
-      }
-      if (!bestMove || childResult.scores[playerIndex] > bestMove.scores[playerIndex]) {
-        bestMove = { id: move, scores: childResult.scores };
-      }
-    }
-    return bestMove;
-  }
-
-  function chooseMove(playerIndex) {
-    var bestCompletedMove;
-    var search = {
-      nodes: 0,
-      nodeBudget: Math.max(100, Math.floor(20000 / symbols.length)),
-      stopped: false,
-    };
-    var maximumDepth = Math.min(8, emptyBoxes(symbols).length);
-
-    //Keep the best move from the deepest iteration that completed in budget
-    for (var depth = 1; depth <= maximumDepth; depth++) {
-      var result = miniMax(symbols, playerIndex, depth, search);
-      if (search.stopped) {
-        break;
-      }
-      bestCompletedMove = result;
-    }
-
-    if (!bestCompletedMove) {
-      throw new Error('The search budget was too small to select a move.');
-    }
-    return bestCompletedMove;
+  function delay(milliseconds) {
+    return new Promise(function (resolve) {
+      window.setTimeout(resolve, milliseconds);
+    });
   }
 
   function clearBoard() {
-    symbols = new Array(boardSize * boardSize).fill('');
+    for (var i = 0; i < boardSize * boardSize; i++) {
+      ctx = document.getElementById('canvas' + (i + 1)).getContext('2d');
+      ctx.clearRect(0, 0, 100, 100);
+      document.getElementById('canvas' + (i + 1)).style.backgroundColor = 'lightyellow';
+      filled[i] = false;
+      symbol[i] = '';
+    }
     turn = 0;
     gameOver = false;
-    for (var index = 0; index < cells.length; index++) {
-      ctx = cells[index].getContext('2d');
-      ctx.clearRect(0, 0, 100, 100);
-      cells[index].style.backgroundColor = 'lightyellow';
-      cells[index].setAttribute('aria-label', 'Cell ' + (index + 1) + ', empty');
-      cells[index].className = 'cell';
-    }
   }
 
-  //6. Track results and play the requested batch of games
   function updateResults() {
     xWinsOutput.value = wins.X.wins;
     xLossesOutput.value = wins.X.losses;
@@ -334,43 +401,30 @@ window.onload = function () {
     }
   }
 
-  function delay(milliseconds) {
-    return new Promise(function (resolve) {
-      window.setTimeout(resolve, milliseconds);
-    });
-  }
-
   async function playGame(gameNumber, totalGames) {
+    // Clear the board before starting a new game
     clearBoard();
-    while (!gameOver) {
+    // Until the game ends, each machine takes a turn. Three matching marks in a line wins
+    while (gameOver === false) {
       var playerIndex = turn % players.length;
       var player = players[playerIndex];
       status.textContent =
-        'Game ' +
-        gameNumber +
-        ' of ' +
-        totalGames +
-        ' on a ' +
-        boardSize +
-        'x' +
-        boardSize +
-        ' board: Machine ' +
-        player +
-        ' is choosing a move.';
+        'Game ' + gameNumber + ' of ' + totalGames + ': Machine ' + player + ' is choosing a move.';
       playMachineMove(playerIndex);
       await delay(moveDelay);
 
-      if (winnerCheck(symbols, player)) {
+      if (winnerCheck(symbol, player)) {
         recordWin(player);
         gameOver = true;
         status.textContent =
           'Game ' + gameNumber + ' of ' + totalGames + ': Machine ' + player + ' won.';
-      } else if (turn >= symbols.length) {
+      } else if (turn >= boardSize * boardSize) {
         recordDraw();
         gameOver = true;
         status.textContent = 'Game ' + gameNumber + ' of ' + totalGames + ': draw.';
       }
     }
+    // Update the final results after each game
     updateResults();
   }
 
@@ -378,11 +432,13 @@ window.onload = function () {
     event.preventDefault();
     var selectedSize = boardSizeInput.valueAsNumber;
     var gameCount = gameCountInput.valueAsNumber;
-    if (!Number.isInteger(selectedSize) || selectedSize < 3 || selectedSize > 10) {
-      status.textContent = 'Enter a whole board size from 3 through 10.';
+
+    if (!Number.isInteger(selectedSize) || selectedSize < 3 || selectedSize > 6) {
+      status.textContent = 'Enter a whole board size from 3 through 6.';
       boardSizeInput.focus();
       return;
     }
+
     if (!Number.isInteger(gameCount) || gameCount < 1 || gameCount > 10) {
       status.textContent = 'Enter a whole number of games from 1 through 10.';
       gameCountInput.focus();
@@ -392,18 +448,16 @@ window.onload = function () {
     runButton.disabled = true;
     boardSizeInput.disabled = true;
     gameCountInput.disabled = true;
-    var activeGame = 0;
-    renderBoard(selectedSize);
     wins = {
       X: { wins: 0, losses: 0, draws: 0 },
       O: { wins: 0, losses: 0, draws: 0 },
       '#': { wins: 0, losses: 0, draws: 0 },
     };
+    renderBoard(selectedSize);
     updateResults();
 
     try {
       for (var gameNumber = 1; gameNumber <= gameCount; gameNumber++) {
-        activeGame = gameNumber;
         await playGame(gameNumber, gameCount);
         await delay(moveDelay);
       }
@@ -435,17 +489,7 @@ window.onload = function () {
         ' draws.';
     } catch (error) {
       console.error(error);
-      status.textContent =
-        'Stopped on a ' +
-        boardSize +
-        'x' +
-        boardSize +
-        ' board with ' +
-        players.length +
-        ' players during game ' +
-        activeGame +
-        ': ' +
-        error.message;
+      status.textContent = 'Unable to complete the games: ' + error.message;
     } finally {
       runButton.disabled = false;
       boardSizeInput.disabled = false;
